@@ -111,6 +111,7 @@ class _RunModelByCameraDemoState extends State<RunModelByCameraDemo> {
     );
   }
 
+
   void resultsCallback(
       List<ResultObjectDetection> results, Duration inferenceTime) {
     if (!mounted) {
@@ -118,6 +119,7 @@ class _RunModelByCameraDemoState extends State<RunModelByCameraDemo> {
     }
     setState(() {
       this.results = results;
+      print("--Results: $results");
       objectDetectionInferenceTime = inferenceTime;
       for (var element in results) {
         print({

@@ -616,7 +616,7 @@ class ModelObjectDetection {
       CameraImage cameraImage, int rotation,
       {double minimumScore = 0.5,
       double iOUThreshold = 0.5,
-      int boxesLimit = 10,
+      int boxesLimit = 1,
       CameraPreProcessingMethod cameraPreProcessingMethod =
           CameraPreProcessingMethod.imageLib,
       PreProcessingMethod preProcessingMethod =
