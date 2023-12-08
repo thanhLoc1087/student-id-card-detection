@@ -1,11 +1,12 @@
 import 'dart:developer';
 import 'dart:io';
-
+import 'package:image/image.dart' as img;
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pytorch_lite/pytorch_lite.dart';
-
+import 'box_widget.dart';
 import 'camera_view_singleton.dart';
 
 /// [CameraView] sends each frame for inference
@@ -28,12 +29,16 @@ class CameraView extends StatefulWidget {
 class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   /// List of available cameras
   late List<CameraDescription> cameras;
+  late File capturedImageFile;
+  bool continueCapturing = true;
+  int successfulDetectionCount = 0;
 
   /// Controller
   CameraController? cameraController;
-
+  bool isCapturing = false;
   /// true when inference is ongoing
   bool predicting = false;
+  bool captureImage = false;
 
   /// true when inference is ongoing
   bool predictingObjectDetection = false;
@@ -203,6 +208,99 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     });
   }
 
+  Future<void> takePicture(ResultObjectDetection result) async {
+    if (cameraController == null || !cameraController!.value.isInitialized) {
+      return;
+    }
+
+    if (isCapturing || !continueCapturing) {
+      return;
+    }
+
+    setState(() {
+      isCapturing = true;
+    });
+
+    try {
+      final Directory extDir = await getTemporaryDirectory();
+      final String dirPath = '${extDir.path}/pictures/';
+      await Directory(dirPath).create(recursive: true);
+      final String filePath =
+          '$dirPath${DateTime.now().millisecondsSinceEpoch}.png';
+
+      XFile pictureFile = await cameraController!.takePicture();
+      await File(pictureFile.path).copy(filePath);
+
+      capturedImageFile = File(filePath);
+
+      print('Picture taken and saved at: $filePath');
+
+      // Stop capturing after taking the picture
+      setState(() {
+        continueCapturing = false;
+      });
+      // Show the captured image on the screen
+      await cropImage(filePath, result);
+      // Perform image cropping
+
+    } catch (e) {
+      print('Error taking picture: $e');
+    } finally {
+      setState(() {
+        isCapturing = false;
+      });
+    }
+  }
+  void _showCroppedImage(String croppedFilePath) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: FileImage(File(croppedFilePath)),
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+
+
+  Future<void> cropImage(String filePath, ResultObjectDetection result) async {
+    if (_objectModel != null) {
+      // Load the captured image
+      img.Image capturedImage = img.decodeImage(File(filePath).readAsBytesSync())!;
+
+      // Use the provided result for cropping
+      ResultObjectDetection firstResult = result;
+
+      // Calculate cropping parameters
+      int left = (firstResult.rect.left * capturedImage.width).round();
+      int top = (firstResult.rect.top * capturedImage.height).round();
+      int right = ((firstResult.rect.left + firstResult.rect.width) * capturedImage.width).round();
+      int bottom = ((firstResult.rect.top + firstResult.rect.height) * capturedImage.height).round();
+
+      // Perform cropping
+      img.Image croppedImage = img.copyCrop(capturedImage, x: left, y: top, width: right - left, height: bottom - top);
+
+      // Save the cropped image
+      String croppedFilePath = '${filePath}_cropped.png';
+      File(croppedFilePath).writeAsBytesSync(img.encodePng(croppedImage));
+
+      print("aaaa--$croppedFilePath");
+      _showCroppedImage(croppedFilePath);
+      print('Cropped image saved at: $croppedFilePath');
+    }
+  }
+
+
   Future<void> runObjectDetection(CameraImage cameraImage) async {
     if (predictingObjectDetection) {
       return;
@@ -225,8 +323,20 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
         minimumScore: 0.5,
         iOUThreshold: 0.5,
       );
-
-      print("--objDetect: $objDetect");
+      print("--objDetect: $objDetect.");
+      String? label= "CCCD_Chip_FrontSide";
+      String? classname="";
+      for (var result in objDetect) {
+        classname = result.className;
+        if (classname?.trim() == label && result.score > 0.88) {
+          print(result.className);
+          successfulDetectionCount++;
+          if (successfulDetectionCount == 3) {
+            takePicture(result);
+            successfulDetectionCount = 0; // Đặt lại giá trị biến đếm sau khi chụp hình
+          }
+        }
+      }
 
       // Stop the stopwatch
       stopwatch.stop();
@@ -236,7 +346,6 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     if (!mounted) {
       return;
     }
-
     setState(() {
       predictingObjectDetection = false;
     });
@@ -269,13 +378,18 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     if (!mounted) {
       return;
     }
+
     switch (state) {
       case AppLifecycleState.paused:
-        cameraController?.stopImageStream();
+      // Pause capturing when the app is paused
+        continueCapturing = false;
+        cameraController!.stopImageStream();
         break;
       case AppLifecycleState.resumed:
+      // Resume capturing when the app is resumed
+        continueCapturing = true;
         if (!cameraController!.value.isStreamingImages) {
-          await cameraController?.startImageStream(onLatestImageAvailable);
+          await cameraController!.startImageStream(onLatestImageAvailable);
         }
         break;
       default:
@@ -284,8 +398,9 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    cameraController?.dispose();
+    WidgetsBinding.instance!.removeObserver(this);
+    cameraController!.dispose();
     super.dispose();
   }
 }
+

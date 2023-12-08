@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pytorch_lite/pytorch_lite.dart';
 import 'package:pytorch_lite_example/ui/box_widget.dart';
-
 import 'ui/camera_view.dart';
 
 /// [RunModelByCameraDemo] stacks [CameraView] and [BoxWidget]s with bottom sheet for stats
@@ -15,6 +14,7 @@ class RunModelByCameraDemo extends StatefulWidget {
 class _RunModelByCameraDemoState extends State<RunModelByCameraDemo> {
   List<ResultObjectDetection>? results;
   Duration? objectDetectionInferenceTime;
+  bool captureImage = false;
 
   String? classification;
   Duration? classificationInferenceTime;
@@ -35,22 +35,6 @@ class _RunModelByCameraDemoState extends State<RunModelByCameraDemo> {
           // Bounding boxes
           boundingBoxes2(results),
 
-          // Heading
-          // Align(
-          //   alignment: Alignment.topLeft,
-          //   child: Container(
-          //     padding: EdgeInsets.only(top: 20),
-          //     child: Text(
-          //       'Object Detection Flutter',
-          //       textAlign: TextAlign.left,
-          //       style: TextStyle(
-          //         fontSize: 28,
-          //         fontWeight: FontWeight.bold,
-          //         color: Colors.deepOrangeAccent.withOpacity(0.6),
-          //       ),
-          //     ),
-          //   ),
-          // ),
 
           //Bottom Sheet
           Align(
@@ -112,8 +96,7 @@ class _RunModelByCameraDemoState extends State<RunModelByCameraDemo> {
   }
 
 
-  void resultsCallback(
-      List<ResultObjectDetection> results, Duration inferenceTime) {
+  void resultsCallback(List<ResultObjectDetection> results, Duration inferenceTime) {
     if (!mounted) {
       return;
     }
@@ -132,9 +115,13 @@ class _RunModelByCameraDemoState extends State<RunModelByCameraDemo> {
             "bottom": element.rect.bottom,
           },
         });
+        if (element.className == "CCCD_Chip_FrontSide") {
+          captureImage = true;
+        }
       }
     });
   }
+
 
   void resultsCallbackClassification(
       String classification, Duration inferenceTime) {
