@@ -281,22 +281,43 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
       // Use the provided result for cropping
       ResultObjectDetection firstResult = result;
 
-      // Calculate cropping parameters
-      int left = (firstResult.rect.left * capturedImage.width).round();
-      int top = (firstResult.rect.top * capturedImage.height).round();
-      int right = ((firstResult.rect.left + firstResult.rect.width) * capturedImage.width).round();
-      int bottom = ((firstResult.rect.top + firstResult.rect.height) * capturedImage.height).round();
+      if (Platform.isIOS) {
+        // Calculate cropping parameters for Android
+        int left = (firstResult.rect.top * capturedImage.height).round();
+        int top = (firstResult.rect.left * capturedImage.width).round();
+        int right = ((firstResult.rect.top + firstResult.rect.height) * capturedImage.width).round();
+        int bottom = ((firstResult.rect.left + firstResult.rect.width) * capturedImage.height).round();
 
-      // Perform cropping
-      img.Image croppedImage = img.copyCrop(capturedImage, x: left, y: top, width: right - left, height: bottom - top);
+        // Perform cropping
+        img.Image croppedImage = img.copyCrop(capturedImage, x: left, y: top, width: right - left, height: bottom - top);
 
-      // Save the cropped image
-      String croppedFilePath = '${filePath}_cropped.png';
-      File(croppedFilePath).writeAsBytesSync(img.encodePng(croppedImage));
+        // Save the cropped image
+        String croppedFilePath = '${filePath}_cropped.png';
+        File(croppedFilePath).writeAsBytesSync(img.encodePng(croppedImage));
 
-      print("aaaa--$croppedFilePath");
-      _showCroppedImage(croppedFilePath);
-      print('Cropped image saved at: $croppedFilePath');
+        print("Path--$croppedFilePath");
+        _showCroppedImage(croppedFilePath);
+        print('Cropped image saved at: $croppedFilePath');
+
+      } else {
+        // Calculate cropping parameters for Android
+        int left = (firstResult.rect.left * capturedImage.width).round();
+        int top = (firstResult.rect.top * capturedImage.height).round();
+        int right = ((firstResult.rect.left + firstResult.rect.width) * capturedImage.width).round();
+        int bottom = ((firstResult.rect.top + firstResult.rect.height) * capturedImage.height).round();
+
+        // Perform cropping
+        img.Image croppedImage = img.copyCrop(capturedImage, x: left, y: top, width: right - left, height: bottom - top);
+
+        // Save the cropped image
+        String croppedFilePath = '${filePath}_cropped.png';
+        File(croppedFilePath).writeAsBytesSync(img.encodePng(croppedImage));
+
+        print("Path--$croppedFilePath");
+        _showCroppedImage(croppedFilePath);
+        print('Cropped image saved at: $croppedFilePath');
+      }
+
     }
   }
 
