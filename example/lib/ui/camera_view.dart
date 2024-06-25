@@ -59,15 +59,20 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   Future loadModel() async {
     String pathImageModel = "assets/models/model_classification.pt";
     //String pathCustomModel = "assets/models/custom_model.ptl";
-    String pathObjectDetectionModel = "assets/models/best.torchscript";
+    String pathObjectDetectionModel = "assets/models/together.torchscript";
     try {
       _imageModel = await PytorchLite.loadClassificationModel(
           pathImageModel, 224, 224, 1000,
-          labelPath: "assets/labels/label_classification_imageNet.txt");
+          labelPath: "assets/labels/label_classification_imageNet.txt",
+          );
       //_customModel = await PytorchLite.loadCustomModel(pathCustomModel);
+      // _objectModel = await PytorchLite.loadObjectDetectionModel(
+      //     pathObjectDetectionModel, 5, 640, 640,
+      //     labelPath: "assets/labels/label_vehicles.txt",
+      //     objectDetectionModelType: ObjectDetectionModelType.yolov5);
       _objectModel = await PytorchLite.loadObjectDetectionModel(
-          pathObjectDetectionModel, 5, 640, 640,
-          labelPath: "assets/labels/label.txt",
+          pathObjectDetectionModel, 2, 640, 640,
+          labelPath: "assets/labels/together_label.txt",
           objectDetectionModelType: ObjectDetectionModelType.yolov8);
     } catch (e) {
       if (e is PlatformException) {
@@ -345,7 +350,7 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
         iOUThreshold: 0.5,
       );
       print("--objDetect: $objDetect.");
-      String? label= "CCCD_Chip_FrontSide";
+      String? label= "Person";
       String? classname="";
       for (var result in objDetect) {
         classname = result.className;
@@ -419,7 +424,7 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    WidgetsBinding.instance!.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     cameraController!.dispose();
     super.dispose();
   }

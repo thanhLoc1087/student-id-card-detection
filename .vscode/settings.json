@@ -3,5 +3,6 @@
         "calloc",
         "malloc",
         "Yolo"
-    ]
+    ],
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

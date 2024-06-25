@@ -70,6 +70,8 @@ class _RunModelByCameraDemoState extends State<RunModelByCameraDemo> {
                               if (objectDetectionInferenceTime != null)
                                 StatsRow('Object Detection Inference time:',
                                     '${objectDetectionInferenceTime?.inMilliseconds} ms'),
+
+                                const StatsRow('Hiiii:', 'hi there'),
                             ],
                           ),
                         )
@@ -115,9 +117,6 @@ class _RunModelByCameraDemoState extends State<RunModelByCameraDemo> {
             "bottom": element.rect.bottom,
           },
         });
-        if (element.className == "CCCD_Chip_FrontSide") {
-          captureImage = true;
-        }
       }
     });
   }

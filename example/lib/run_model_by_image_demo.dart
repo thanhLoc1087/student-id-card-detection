@@ -35,19 +35,20 @@ class _RunModelByImageDemoState extends State<RunModelByImageDemo> {
   Future loadModel() async {
     String pathImageModel = "assets/models/model_classification.pt";
     //String pathCustomModel = "assets/models/custom_model.ptl";
-    String pathObjectDetectionModel = "assets/models/yolov5s.torchscript";
-    String pathObjectDetectionModelYolov8 = "assets/models/yolov8s.torchscript";
+    String pathObjectDetectionModel = "assets/models/seperate.torchscript";
+    String pathObjectDetectionModelYolov8 = "assets/models/together.torchscript";
     try {
       _imageModel = await PytorchLite.loadClassificationModel(
           pathImageModel, 224, 224, 1000,
           labelPath: "assets/labels/label_classification_imageNet.txt");
       //_customModel = await PytorchLite.loadCustomModel(pathCustomModel);
       _objectModel = await PytorchLite.loadObjectDetectionModel(
-          pathObjectDetectionModel, 80, 640, 640,
-          labelPath: "assets/labels/labels_objectDetection_Coco.txt");
+          pathObjectDetectionModel, 2, 640, 640,
+          labelPath: "assets/labels/seperate_label.txt",
+          objectDetectionModelType: ObjectDetectionModelType.yolov8);
       _objectModelYoloV8 = await PytorchLite.loadObjectDetectionModel(
-          pathObjectDetectionModelYolov8, 80, 640, 640,
-          labelPath: "assets/labels/labels_objectDetection_Coco.txt",
+          pathObjectDetectionModelYolov8, 2, 640, 640,
+          labelPath: "assets/labels/together_label.txt",
           objectDetectionModelType: ObjectDetectionModelType.yolov8);
     } catch (e) {
       if (e is PlatformException) {
@@ -62,6 +63,7 @@ class _RunModelByImageDemoState extends State<RunModelByImageDemo> {
   Future runObjectDetectionWithoutLabels() async {
     //pick a random image
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image == null) return;
     Stopwatch stopwatch = Stopwatch()..start();
 
     objDetect = await _objectModel
@@ -93,9 +95,10 @@ class _RunModelByImageDemoState extends State<RunModelByImageDemo> {
     //pick a random image
 
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image == null) return;
     Stopwatch stopwatch = Stopwatch()..start();
     objDetect = await _objectModel.getImagePrediction(
-        await File(image!.path).readAsBytes(),
+        await File(image.path).readAsBytes(),
         minimumScore: 0.1,
         iOUThreshold: 0.3);
     textToShow = inferenceTimeAsString(stopwatch);
@@ -126,6 +129,7 @@ class _RunModelByImageDemoState extends State<RunModelByImageDemo> {
     //pick a random image
 
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image == null) return;
     Stopwatch stopwatch = Stopwatch()..start();
 
     objDetect = await _objectModelYoloV8.getImagePrediction(
